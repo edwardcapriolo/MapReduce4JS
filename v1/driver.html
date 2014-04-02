@@ -1,0 +1,19 @@
+<script language="javascript" src="types.js"></script>
+<script language="javascript" src="core.js"></script>
+<script language="javascript" src="examples_wordcount.js"></script>
+<script>
+var data = [ 'sup dude', 'your cool', 'yea', 'your cool' ];
+var mapContext = new MapContext(10);
+var reduceContext = new ReduceContext();
+var driver = new Driver(data, mapContext, WordCountMapper, reduceContext, WordCountReducer );
+driver.mapPhase();
+mapContext.dump();
+driver.reducePhase();
+reduceContext.dump();
+var s = new MapRedString("yo");
+var t = new MapRedString("dude");
+var i = new MapRedInt(4);
+var j = new MapRedInt(5);
+alert(s.mrCompareTo(t));
+alert(i.mrCompareTo(j));
+</script>
