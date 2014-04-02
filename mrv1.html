@@ -125,13 +125,19 @@ function ReduceContext(){
   this.emit = function(key , value) {
     output.push([key, value]);
   };
+  this.dump = function() {
+    for (var i=0 ; i < output.length ; i++){
+      var innerArray = output[i];
+      alert (innerArray[0].mrToString() + ' ' + innerArray[1].mrToString());
+    }
+  };
 }
 
 function WordCountReducer( key, values, reduceContext ){
   var sum = 0;
   for (var i = 0 ; i< values.length ; i++){
     var nt = values[i];
-    sum += parseInt(nt);
+    sum += parseInt(nt.i);
   }
   reduceContext.emit(key, new MapRedInt(sum));
 }
@@ -151,6 +157,7 @@ driver.mapPhase();
 //mapContext.dump();
 alert('wow');
 driver.reducePhase();
+reduceContext.dump();
 var s = new MapRedString("yo");
 var t = new MapRedString("dude");
 var i = new MapRedInt(4);
