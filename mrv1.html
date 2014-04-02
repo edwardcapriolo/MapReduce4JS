@@ -89,7 +89,7 @@ function MapContext (partitions) {
   };
 }
 
-function Driver (data, mapContext, mapFx, reduceFx, reduceContext){
+function Driver (data, mapContext, mapFx, reduceContext, reduceFx){
   this.data = data;
   this.mapContext = mapContext;
   this.mapFx = mapFx;
@@ -107,7 +107,7 @@ function Driver (data, mapContext, mapFx, reduceFx, reduceContext){
       var arr = mapContext.getX()[i];
       for (var j = 0; j < arr.length; j++ ) {
         var twoParts = arr[j];
-	alert('partition:' + i + ' ' + twoParts[0].mrToString() + ' ' + twoParts[1].mrToString());
+	reduceFx(twoParts[0], twoParts[1], reduceContext);
       } 
     }
   };
@@ -123,14 +123,14 @@ function ReduceContext(){
     return output;
   };
   this.emit = function(key , value) {
-    x.push([key, value]);
+    output.push([key, value]);
   };
 }
 
-function WordCountReducer( key, reduceContext ){
+function WordCountReducer( key, values, reduceContext ){
   var sum = 0;
-  while (reduceContext.hasMoreValues()){
-    var nt = reduceContext.getNextValue();
+  for (var i = 0 ; i< values.length ; i++){
+    var nt = values[i];
     sum += parseInt(nt);
   }
   reduceContext.emit(key, new MapRedInt(sum));
@@ -148,9 +148,9 @@ var mapContext = new MapContext(10);
 var reduceContext = new ReduceContext();
 var driver = new Driver(data, mapContext, WordCountMapper, reduceContext, WordCountReducer );
 driver.mapPhase();
-mapContext.dump();
-//alert('wow');
-//driver.reducePhase();
+//mapContext.dump();
+alert('wow');
+driver.reducePhase();
 var s = new MapRedString("yo");
 var t = new MapRedString("dude");
 var i = new MapRedInt(4);
