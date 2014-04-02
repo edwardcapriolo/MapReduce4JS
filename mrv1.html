@@ -55,48 +55,39 @@ function MapContext (partitions) {
   this.getX = function() {
     return x;
   };
+  /* TODO secondary sort on value */
   this.emit = function(key, value) {
     var bucket = x[key.mrHashCode() % partitions];
     for (var i = 0; i < bucket.length; i++){
-      var innerArray = bucket[i];
+      var innerArray = bucket[i]; 
       var compRes = key.mrCompareTo(innerArray[0]);
-      if (compRes == 0 || compRes == -1){
-        bucket.splice(i, 0, [key, value] );
+      if (compRes == 0){
+        innerArray[1].push(value);
+        return;
+      }
+      if (compRes == -1){
+        bucket.splice(i, 0, [key, []] );
         return;
       }
     }
-    bucket.push([key, value]);
+    bucket.push([key, [value]]);
   };
   this.dump = function(){
     for (var i = 0; i < partitions ; i++){
       var arr = x[i];
       for (var j = 0; j < arr.length; j++ ) {
         var twoParts = arr[j];
-	alert('partition:' + i + ' ' + twoParts[0].mrToString() + ' ' + twoParts[1].mrToString());
+        var values = twoParts[1];
+        var cat = "[";
+        for (var k =0 ; k < values.length; k++){
+          cat += values[k].mrToString() +' ';
+        }
+        cat +=']';
+	alert('partition:' + i + ' ' + twoParts[0].mrToString() + ' ' + cat);
       }
     }
   };
 }
-
-function ReduceContext(){
-  var output = [];
-  this.getOutput = function() {
-    return output;
-  };
-  this.emit = function(key , value) {
-    x.push([key, value]);
-  };
-}
-
-function WordCountReducer( key, reduceContext ){
-  var sum = 0;
-  while (reduceContext.hasMoreValues()){
-    var nt = reduceContext.getNextValue();
-    sum += parseInt(nt);
-  }
-  reduceContext.emit(key, new MapRedInt(sum));
-}
-
 
 function Driver (data, mapContext, mapFx, reduceFx, reduceContext){
   this.data = data;
@@ -122,9 +113,27 @@ function Driver (data, mapContext, mapFx, reduceFx, reduceContext){
   };
 
   this.exec = function() {
-    this.mapPhase();
-    
+    this.mapPhase();    
   };
+}
+
+function ReduceContext(){
+  var output = [];
+  this.getOutput = function() {
+    return output;
+  };
+  this.emit = function(key , value) {
+    x.push([key, value]);
+  };
+}
+
+function WordCountReducer( key, reduceContext ){
+  var sum = 0;
+  while (reduceContext.hasMoreValues()){
+    var nt = reduceContext.getNextValue();
+    sum += parseInt(nt);
+  }
+  reduceContext.emit(key, new MapRedInt(sum));
 }
 
 function WordCountMapper (rw, mapContext){
@@ -139,9 +148,9 @@ var mapContext = new MapContext(10);
 var reduceContext = new ReduceContext();
 var driver = new Driver(data, mapContext, WordCountMapper, reduceContext, WordCountReducer );
 driver.mapPhase();
-//mapContext.dump();
-alert('wow');
-driver.reducePhase();
+mapContext.dump();
+//alert('wow');
+//driver.reducePhase();
 var s = new MapRedString("yo");
 var t = new MapRedString("dude");
 var i = new MapRedInt(4);
