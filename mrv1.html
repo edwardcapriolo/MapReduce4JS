@@ -47,47 +47,56 @@ function MapRedInt (i){
 }
 
 function MapContext (partitions) {
-    this.partitions = partitions;
-    var x = [];
-    for (var i = 0; i < partitions ; i++){
-	x[i] = [];
-    }
-    this.getX = function() {
-      return x;
-    };
-    this.emit = function(key, value) {
-        //x[hashCode(key) % partitions].push([key, value]);
-	var bucket = x[key.mrHashCode() % partitions];
-	for (var i = 0; i < bucket.length; i++){
-          var innerArray = bucket[i];
-          var compRes = key.mrCompareTo(innerArray[0]);
-          if (compRes == 0 || compRes == -1){
-            bucket.splice(i, 0, [key, value] );
-            return;
-          }
-        }
-	bucket.push([key, value]);
-    };
-    this.dump = function(){
-      for (var i = 0; i < partitions ; i++){
-        var arr = x[i];
-        for (var j = 0; j < arr.length; j++ ) {
-          var twoParts = arr[j];
-	  alert('partition:' + i + ' ' + twoParts[0].mrToString() + ' ' + twoParts[1].mrToString());
-        }
+  this.partitions = partitions;
+  var x = [];
+  for (var i = 0; i < partitions ; i++){
+    x[i] = [];
+  }
+  this.getX = function() {
+    return x;
+  };
+  this.emit = function(key, value) {
+    var bucket = x[key.mrHashCode() % partitions];
+    for (var i = 0; i < bucket.length; i++){
+      var innerArray = bucket[i];
+      var compRes = key.mrCompareTo(innerArray[0]);
+      if (compRes == 0 || compRes == -1){
+        bucket.splice(i, 0, [key, value] );
+        return;
       }
-    };
+    }
+    bucket.push([key, value]);
+  };
+  this.dump = function(){
+    for (var i = 0; i < partitions ; i++){
+      var arr = x[i];
+      for (var j = 0; j < arr.length; j++ ) {
+        var twoParts = arr[j];
+	alert('partition:' + i + ' ' + twoParts[0].mrToString() + ' ' + twoParts[1].mrToString());
+      }
+    }
+  };
 }
 
 function ReduceContext(){
-  var x = [];
-  this.getX = function() {
-    return x;
+  var output = [];
+  this.getOutput = function() {
+    return output;
   };
   this.emit = function(key , value) {
     x.push([key, value]);
   };
 }
+
+function WordCountReducer( key, reduceContext ){
+  var sum = 0;
+  while (reduceContext.hasMoreValues()){
+    var nt = reduceContext.getNextValue();
+    sum += parseInt(nt);
+  }
+  reduceContext.emit(key, new MapRedInt(sum));
+}
+
 
 function Driver (data, mapContext, mapFx, reduceFx, reduceContext){
   this.data = data;
@@ -116,15 +125,6 @@ function Driver (data, mapContext, mapFx, reduceFx, reduceContext){
     this.mapPhase();
     
   };
-}
-
-function WordCountReducer( key, reduceContext ){
-  var sum = 0;
-  while (reduceContext.hasMoreValues()){
-    var nt = reduceContext.getNextValue();
-    sum += parseInt(nt);
-  }
-  reduceContext.emit(key, new MapRedInt(sum));
 }
 
 function WordCountMapper (rw, mapContext){
